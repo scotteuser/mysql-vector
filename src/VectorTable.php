@@ -44,7 +44,7 @@ CREATE FUNCTION COSIM(v1 JSON, v2 JSON) RETURNS FLOAT DETERMINISTIC BEGIN DECLAR
         $vectorsQuery =
             "CREATE TABLE %s %s (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                vector JSON,
+                `vector` JSON,
                 normalized_vector JSON,
                 magnitude DOUBLE,
                 binary_code BINARY(%d),
@@ -175,8 +175,8 @@ CREATE FUNCTION COSIM(v1 JSON, v2 JSON) RETURNS FLOAT DETERMINISTIC BEGIN DECLAR
         $tableName = $this->getVectorTableName();
 
         $insertQuery = empty($id) ?
-            "INSERT INTO $tableName (vector, normalized_vector, magnitude, binary_code) VALUES (?, ?, ?, UNHEX(?))" :
-            "UPDATE $tableName SET vector = ?, normalized_vector = ?, magnitude = ?, binary_code = UNHEX(?) WHERE id = $id";
+            "INSERT INTO $tableName (`vector`, normalized_vector, magnitude, binary_code) VALUES (?, ?, ?, UNHEX(?))" :
+            "UPDATE $tableName SET `vector` = ?, normalized_vector = ?, magnitude = ?, binary_code = UNHEX(?) WHERE id = $id";
 
         $statement = $this->mysqli->prepare($insertQuery);
         if(!$statement) {
@@ -210,7 +210,7 @@ CREATE FUNCTION COSIM(v1 JSON, v2 JSON) RETURNS FLOAT DETERMINISTIC BEGIN DECLAR
     public function batchInsert(array $vectorArray): array {
         $tableName = $this->getVectorTableName();
 
-        $statement = $this->getConnection()->prepare("INSERT INTO $tableName (vector, normalized_vector, magnitude, binary_code) VALUES (?, ?, ?, UNHEX(?))");
+        $statement = $this->getConnection()->prepare("INSERT INTO $tableName (`vector`, normalized_vector, magnitude, binary_code) VALUES (?, ?, ?, UNHEX(?))");
         if(!$statement) {
             throw new \Exception("Prepare failed: " . $this->getConnection()->error);
         }
@@ -255,7 +255,7 @@ CREATE FUNCTION COSIM(v1 JSON, v2 JSON) RETURNS FLOAT DETERMINISTIC BEGIN DECLAR
         $tableName = $this->getVectorTableName();
 
         $placeholders = implode(', ', array_fill(0, count($ids), '?'));
-        $statement = $this->mysqli->prepare("SELECT id, vector, normalized_vector, magnitude, binary_code FROM $tableName WHERE id IN ($placeholders)");
+        $statement = $this->mysqli->prepare("SELECT id, `vector`, normalized_vector, magnitude, binary_code FROM $tableName WHERE id IN ($placeholders)");
         $types = str_repeat('i', count($ids));
 
         $refs = [];
@@ -286,7 +286,7 @@ CREATE FUNCTION COSIM(v1 JSON, v2 JSON) RETURNS FLOAT DETERMINISTIC BEGIN DECLAR
     public function selectAll(): array {
         $tableName = $this->getVectorTableName();
 
-        $statement = $this->mysqli->prepare("SELECT id, vector, normalized_vector, magnitude, binary_code FROM $tableName");
+        $statement = $this->mysqli->prepare("SELECT id, `vector`, normalized_vector, magnitude, binary_code FROM $tableName");
 
         if (!$statement) {
             $e = new \Exception($this->mysqli->error);
@@ -384,7 +384,7 @@ CREATE FUNCTION COSIM(v1 JSON, v2 JSON) RETURNS FLOAT DETERMINISTIC BEGIN DECLAR
         // Rerank candidates using cosine similarity
         $placeholders = implode(',', array_fill(0, count($candidates), '?'));
         $sql = "
-        SELECT id, vector, normalized_vector, magnitude, COSIM(normalized_vector, ?) AS similarity
+        SELECT id, `vector`, normalized_vector, magnitude, COSIM(normalized_vector, ?) AS similarity
         FROM %s
         WHERE id IN ($placeholders)
         ORDER BY similarity DESC
